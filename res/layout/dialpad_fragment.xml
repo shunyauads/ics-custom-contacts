@@ -57,6 +57,14 @@
 
     </LinearLayout>
 
+        <ListView
+            android:id="@+id/foundContacts"
+            android:layout_width="match_parent"
+            android:layout_height="150dip"
+            android:layout_alignParentLeft="true"
+            android:textColor="?android:attr/textColorPrimary"
+            android:background="@android:color/transparent" />
+            
     <!-- Keypad section -->
     <include layout="@layout/dialpad" />
 
@@ -79,3 +87,4 @@
     />
 
 </LinearLayout>
+
