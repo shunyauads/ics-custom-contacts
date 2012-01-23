@@ -19,6 +19,8 @@ package com.android.contacts.dialpad;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -66,6 +68,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
@@ -78,7 +81,6 @@ import com.android.contacts.activities.DialtactsActivity;
 import com.android.contacts.activities.DialtactsActivity.ViewPagerVisibilityListener;
 import com.android.contacts.dialpad.adapter.ContactsAdapter;
 import com.android.contacts.dialpad.vo.ContactVO;
-import com.android.contacts.util.PhoneNumberFormatter;
 import com.android.internal.telephony.ITelephony;
 import com.android.phone.CallLogAsync;
 import com.android.phone.HapticFeedback;
@@ -115,10 +117,11 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
    */
   private View mDigitsContainer;
   private EditText mDigits;
+  private ImageButton clearDigits;
   private ListView mFoundContacts;
   private ArrayList<ContactVO> allContacts = new ArrayList<ContactVO>();
   private ArrayList<ContactVO> fContacts = new ArrayList<ContactVO>();
-  private ContactsAdapter myAdapter;
+  private ContactsAdapter foundContactsAdapter;
 
   private View mDelete;
   private ToneGenerator mToneGenerator;
@@ -220,6 +223,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 
 	if (isDigitsEmpty()) {
 	  mDigits.setCursorVisible(false);
+	} else {
 	}
 
 	updateDialAndDeleteButtonEnabledState();
@@ -257,20 +261,26 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 	mDigits.setOnLongClickListener(this);
 	mDigits.addTextChangedListener(this);
 
+	clearDigits = (ImageButton) fragmentView.findViewById(R.id.clear_digits);
+	clearDigits.setOnClickListener(this);
+
 	reloadContacts();
+
 	mFoundContacts = (ListView) fragmentView.findViewById(R.id.foundContacts);
-	myAdapter = new ContactsAdapter(getActivity(), R.layout.dialpad_row, fContacts);
-	mFoundContacts.setAdapter(myAdapter);
+	foundContactsAdapter = new ContactsAdapter(getActivity(), R.layout.dialpad_row, fContacts);
+	mFoundContacts.setAdapter(foundContactsAdapter);
 
 	mFoundContacts.setOnItemClickListener(new OnItemClickListener() {
 	  public void onItemClick(AdapterView arg0, View view, int position, long id) {
 		final ContactVO pi = fContacts.get(position);
-		if (pi.get_id()!=null)
-		  mDigits.setText(pi.getNumber());
+		if (pi.get_id() != null) {
+		  mDigits.setText(pi.getPhone());
+		}
 	  }
 	});
 
-	PhoneNumberFormatter.setPhoneNumberFormattingTextWatcher(getActivity(), mDigits);
+	// PhoneNumberFormatter.setPhoneNumberFormattingTextWatcher(getActivity(),
+	// mDigits);
 
 	// Soft menu button should appear only when there's no hardware menu button.
 	final View overflowMenuButton = fragmentView.findViewById(R.id.overflow_menu);
@@ -328,7 +338,14 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 	return fragmentView;
   }
 
+  public static void cloneList(ArrayList<ContactVO> source, ArrayList<ContactVO> target) {
+	target.clear();
+	for (ContactVO item : source)
+	  target.add(item.clone());
+  }
+
   private void reloadContacts() {
+	allContacts.clear();
 	Uri uri = ContactsContract.Contacts.CONTENT_URI;
 	String[] projection = new String[] { ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME };
 	String selection = ContactsContract.Contacts.IN_VISIBLE_GROUP + " = '1'";
@@ -361,25 +378,21 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 
 	for (ContactVO item : allContacts) {
 	  if (phones.get(item.get_id()) != null)
-		item.setNumber(phones.get(item.get_id()));
+		item.setPhone(phones.get(item.get_id()));
 	}
 
-	fContacts.clear();
-	fContacts.addAll(allContacts);
+	cloneList(allContacts, fContacts);
   }
 
-  private void searchByT9(int keyCode) {
-	if ((keyCode < KeyEvent.KEYCODE_0 || keyCode > KeyEvent.KEYCODE_9) && keyCode != KeyEvent.KEYCODE_DEL)
-	  return;
-	fContacts.clear();
-	fContacts.addAll(allContacts);
+  private void searchByT9() {
+	cloneList(allContacts, fContacts);
 
 	if (mDigits.getText().length() < 1) {
-	  myAdapter.notifyDataSetChanged();
+	  foundContactsAdapter.notifyDataSetChanged();
 	  return;
 	}
 
-	String pattern = ".*";
+	String pattern = "";
 	for (int i = 0; i < mDigits.getText().length(); i++) {
 	  String character = mDigits.getText().charAt(i) + "";
 	  try {
@@ -390,17 +403,31 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 		// not a number
 	  }
 	}
-	pattern += ".*";
 	ArrayList<ContactVO> toRemove = new ArrayList<ContactVO>();
 	Log.d(TAG, "current pattern: " + pattern);
 
 	for (int i = 0; i < fContacts.size(); i++) {
 	  ContactVO item = fContacts.get(i);
 	  boolean remove = true;
-	  if (item.getName().toLowerCase().matches(pattern) || (item.getNumber() != null && item.getNumber().toLowerCase().matches(pattern))) {
-		// Log.d(TAG, "Name: "+item.getName()+" matched pattern: " + pattern);
+	  Pattern regExp = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+	  String name = item.getName();
+	  String phone = (item.getPhone() != null ? item.getPhone() : "");
+
+	  Matcher matcher = regExp.matcher(name);
+
+	  if (matcher.find()) {
 		remove = false;
+		item.setNameHighlightStart(matcher.start());
+		item.setNameHighlightEnd(matcher.end());
+	  } else {
+		matcher = regExp.matcher(phone);
+		if (matcher.find()) {
+		  remove = false;
+		  item.setPhoneHighlightStart(matcher.start());
+		  item.setPhoneHighlightEnd(matcher.end());
+		}
 	  }
+
 	  if (remove)
 		toRemove.add(item);
 	}
@@ -410,7 +437,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 	} else {
 	  Collections.sort(fContacts);
 	}
-	myAdapter.notifyDataSetChanged();
+	foundContactsAdapter.notifyDataSetChanged();
   }
 
   private boolean isLayoutReady() {
@@ -580,6 +607,8 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
   @Override
   public void onResume() {
 	super.onResume();
+
+	reloadContacts();
 
 	// Query the last dialed number. Do it first because hitting
 	// the DB is 'slow'. This call is asynchronous.
@@ -767,7 +796,8 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 	mHaptic.vibrate();
 	KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
 	mDigits.onKeyDown(keyCode, event);
-	searchByT9(keyCode);
+
+	searchByT9();
 
 	// If the cursor is at the end of the text we hide it.
 	final int length = mDigits.length();
@@ -872,6 +902,12 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 	  if (!isDigitsEmpty()) {
 		mDigits.setCursorVisible(true);
 	  }
+	  return;
+	}
+	case R.id.clear_digits: {
+	  mDigits.setText("");
+	  cloneList(allContacts, fContacts);
+	  foundContactsAdapter.notifyDataSetChanged();
 	  return;
 	}
 	case R.id.overflow_menu: {
@@ -1437,6 +1473,11 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 	  }
 	}
 	mDelete.setEnabled(digitsNotEmpty);
+	if (digitsNotEmpty) {
+	  clearDigits.setVisibility(View.VISIBLE);
+	} else {
+	  clearDigits.setVisibility(View.GONE);
+	}
   }
 
   /**

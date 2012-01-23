@@ -46,6 +46,15 @@
             android:background="@android:color/transparent" />
 
         <ImageButton
+            android:id="@+id/clear_digits"
+            android:layout_width="48dip"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:src="@drawable/ic_clear_digits"
+            android:nextFocusLeft="@id/digits"
+            android:background="?android:attr/selectableItemBackground"/>
+
+        <ImageButton
             android:id="@+id/overflow_menu"
             android:layout_width="48dip"
             android:layout_height="match_parent"
