@@ -348,7 +348,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 		allContacts.clear();
 		Uri uri = ContactsContract.Contacts.CONTENT_URI;
 		String[] projection = new String[] { ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME };
-		String selection = ContactsContract.Contacts.IN_VISIBLE_GROUP + " = '1'";
+		String selection = ContactsContract.Contacts.IN_VISIBLE_GROUP + " = 1 and "+ContactsContract.Contacts.HAS_PHONE_NUMBER + " = 1";
 		String[] selectionArgs = null;
 		String sortOrder = ContactsContract.Contacts.DISPLAY_NAME + " COLLATE LOCALIZED ASC";
 
