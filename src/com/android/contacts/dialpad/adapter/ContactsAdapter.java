@@ -46,7 +46,7 @@ public class ContactsAdapter extends ArrayAdapter<ContactVO> {
 		}
 		TextView contactPhone = (TextView) v.findViewById(R.id.contact_phone);
 		if (contactPhone != null) {
-			SpannableString text = new SpannableString(contact.getPhone() != null ? contact.getPhone() : "");
+			SpannableString text = new SpannableString(contact.getPhoneVisible() != null ? contact.getPhoneVisible() : "");
 			//Log.d(TAG, "Setting span for: " + text + " | Start: " + contact.getPhoneHighlightStart() + " | End:" + contact.getPhoneHighlightEnd());
 			if (contact.getPhoneHighlightStart() >= 0 && contact.getPhoneHighlightEnd() > contact.getPhoneHighlightStart())
 				text.setSpan(new BackgroundColorSpan(MY_BACKGROUD_COLOR), contact.getPhoneHighlightStart(), contact.getPhoneHighlightEnd(), 0);

@@ -1,19 +1,22 @@
 package com.android.contacts.dialpad.vo;
 
+import java.util.ArrayList;
+
 public class ContactVO implements Comparable<ContactVO> {
 
   private String _id;
   private String name;
-  private String phone;
+  private ArrayList<PhoneVO> phones;
   private int nameHighlightStart;
   private int nameHighlightEnd;
   private int phoneHighlightStart;
   private int phoneHighlightEnd;
+  private String phoneVisible;
 
-  public ContactVO(String _id, String name, String phone) {
+  public ContactVO(String _id, String name) {
 	this._id = _id;
 	this.name = name;
-	this.phone = phone;
+	this.phones = new ArrayList<PhoneVO>();
 	this.nameHighlightStart = -1;
 	this.nameHighlightEnd = -1;
 	this.phoneHighlightStart = -1;
@@ -36,12 +39,12 @@ public class ContactVO implements Comparable<ContactVO> {
 	this.name = name;
   }
 
-  public String getPhone() {
-	return phone;
+  public ArrayList<PhoneVO> getPhones() {
+	return phones;
   }
 
-  public void setPhone(String phone) {
-	this.phone = phone;
+  public void setPhones(ArrayList<PhoneVO> phones) {
+	this.phones = phones;
   }
 
   @Override
@@ -82,11 +85,31 @@ public class ContactVO implements Comparable<ContactVO> {
   }
 
   public ContactVO clone() {
-	ContactVO temp = new ContactVO(_id, name, phone);
+	ContactVO temp = new ContactVO(_id, name);
+	temp.setPhones((ArrayList<PhoneVO>)phones.clone());
 	temp.setNameHighlightEnd(nameHighlightEnd);
 	temp.setNameHighlightStart(nameHighlightStart);
 	temp.setPhoneHighlightEnd(phoneHighlightEnd);
 	temp.setPhoneHighlightStart(phoneHighlightStart);
+	temp.setPhoneVisible(phoneVisible);
 	return temp;
   }
+  
+  public void addPhone(String phone, int type) {
+	  phones.add(new PhoneVO(phone, type));
+  }
+  
+  public void setPhoneVisible(String phoneVisible) {
+	  this.phoneVisible = phoneVisible;
+  }
+
+  public String getPhoneVisible() {
+	  if (phoneVisible!=null && phoneVisible.length()>0)
+		  return phoneVisible;
+	  if (phones!=null && phones.size()>0)
+		  return phones.get(0).getNumber();
+	  else
+		  return null;
+  }
+  
 }
