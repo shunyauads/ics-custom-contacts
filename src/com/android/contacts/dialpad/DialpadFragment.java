@@ -109,9 +109,9 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 	 */
 	private static final int DIAL_TONE_STREAM_TYPE = AudioManager.STREAM_MUSIC;
 
-	private static final String[] T9_KEYCODES = { "[0+ ]", "[1]", "[abcàáâäåɑæçǽćčá2]",
-			"[defďéèêëě3]", "[ghiíìïîǵ4]", "[jklḱḱĺ5]", "[mnoòóöôøñŋǿḿńőň6]", "[pqrsßɾṕŕśřš7]", "[tuvúůùüûűť8]",
-			"[wxyzýẃźž9]" };
+	private static final String[] T9_KEYCODES = { "[0+ ]", "[1]", "[abcáàäâãåąæāªăçćč¢ъ2]",
+			"[defđðďéèëêęėēě3]", "[ghiģğíïìîįīı4]", "[jklķḱḱĺľĺŀļł5]", "[mnoóòöôõøœōºőñńņňǿḿ6]", "[pqrsšßśşŗŕř7]", "[tuvțťúüùûūűųů8]",
+			"[wxyzÿýžźż9]" };
 
 	public interface Listener {
 		public void onSearchButtonPressed();
