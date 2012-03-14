@@ -394,7 +394,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 		allContacts.clear();
 		Uri uri = ContactsContract.Contacts.CONTENT_URI;
 		String[] projection = new String[] { ContactsContract.Contacts._ID,
-				ContactsContract.Contacts.DISPLAY_NAME };
+				ContactsContract.Contacts.DISPLAY_NAME,ContactsContract.Contacts.PHOTO_URI,ContactsContract.Contacts.PHOTO_THUMBNAIL_URI };
 		String selection = ContactsContract.Contacts.IN_VISIBLE_GROUP
 				+ " = 1 and " + ContactsContract.Contacts.HAS_PHONE_NUMBER
 				+ " = 1";
@@ -411,6 +411,13 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 						&& cur.getString(1).trim().length() > 0) {
 					ContactVO cnt = new ContactVO(cur.getString(0),
 							cur.getString(1));
+					String photoUri = cur.getString(2);
+					if (photoUri==null || photoUri.length()<1)
+						photoUri = cur.getString(3);
+//					if (photoUri!=null) {
+//						Log.d(TAG, "loader photoUri: "+photoUri);
+//					}
+					cnt.setPhotoUri(photoUri);
 					allContacts.add(cnt);
 				}
 			}
