@@ -12,7 +12,7 @@ public class ContactVO implements Comparable<ContactVO> {
 	private int phoneHighlightStart;
 	private int phoneHighlightEnd;
 	private String phoneVisible;
-	private String photoUri;
+	private int photoId;
 
 	public ContactVO(String _id, String name) {
 		this._id = _id;
@@ -22,7 +22,7 @@ public class ContactVO implements Comparable<ContactVO> {
 		this.nameHighlightEnd = -1;
 		this.phoneHighlightStart = -1;
 		this.phoneHighlightEnd = -1;
-		this.photoUri = null;
+		this.photoId = -1;
 	}
 
 	public String get_id() {
@@ -94,7 +94,7 @@ public class ContactVO implements Comparable<ContactVO> {
 		temp.setPhoneHighlightEnd(phoneHighlightEnd);
 		temp.setPhoneHighlightStart(phoneHighlightStart);
 		temp.setPhoneVisible(phoneVisible);
-		temp.setPhotoUri(photoUri);
+		temp.setPhotoId(photoId);
 		return temp;
 	}
 
@@ -115,12 +115,12 @@ public class ContactVO implements Comparable<ContactVO> {
 			return null;
 	}
 
-	public String getPhotoUri() {
-		return photoUri;
+	public int getPhotoId() {
+		return photoId;
 	}
 
-	public void setPhotoUri(String photoUri) {
-		this.photoUri = photoUri;
+	public void setPhotoId(int photoId) {
+		this.photoId = photoId;
 	}
 
 }

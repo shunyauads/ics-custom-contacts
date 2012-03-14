@@ -19,6 +19,8 @@ package com.android.contacts.dialpad;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +43,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemProperties;
+import android.provider.CallLog.Calls;
 import android.provider.Contacts.Intents.Insert;
 import android.provider.Contacts.People;
 import android.provider.Contacts.Phones;
@@ -79,12 +82,14 @@ import com.android.contacts.R;
 import com.android.contacts.SpecialCharSequenceMgr;
 import com.android.contacts.activities.DialtactsActivity;
 import com.android.contacts.activities.DialtactsActivity.ViewPagerVisibilityListener;
+import com.android.contacts.calllog.CallLogQuery;
 import com.android.contacts.dialpad.adapter.ContactsAdapter;
 import com.android.contacts.dialpad.vo.ContactVO;
 import com.android.contacts.dialpad.vo.PhoneVO;
 import com.android.internal.telephony.ITelephony;
 import com.android.phone.CallLogAsync;
 import com.android.phone.HapticFeedback;
+import com.google.android.collect.Lists;
 
 /**
  * Fragment that displays a twelve-key phone dialpad.
@@ -104,14 +109,24 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 	private static final int TONE_RELATIVE_VOLUME = 80;
 
 	/**
+	 * The time window from the current time within which an unread entry will
+	 * be added to the new section.
+	 */
+	private static final long NEW_SECTION_TIME_WINDOW = TimeUnit.DAYS
+			.toMillis(7);
+
+	private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
+	/**
 	 * Stream type used to play the DTMF tones off call, and mapped to the
 	 * volume control keys
 	 */
 	private static final int DIAL_TONE_STREAM_TYPE = AudioManager.STREAM_MUSIC;
 
-	private static final String[] T9_KEYCODES = { "[0+ ]", "[1]", "[abcáàäâãåąæāªăçćč¢ъ2]",
-			"[defđðďéèëêęėēě3]", "[ghiģğíïìîįīı4]", "[jklķḱḱĺľĺŀļł5]", "[mnoóòöôõøœōºőñńņňǿḿ6]", "[pqrsšßśşŗŕř7]", "[tuvțťúüùûūűųů8]",
-			"[wxyzÿýžźż9]" };
+	private static final String[] T9_KEYCODES = { "[0+ ]", "[1]",
+			"[abcáàäâãåąæāªăçćč¢ъ2]", "[defđðďéèëêęėēě3]", "[ghiģğíïìîįīı4]",
+			"[jklķḱḱĺľĺŀļł5]", "[mnoóòöôõøœōºőñńņňǿḿ6]", "[pqrsšßśşŗŕř7]",
+			"[tuvțťúüùûūűųů8]", "[wxyzÿýžźż9]" };
 
 	public interface Listener {
 		public void onSearchButtonPressed();
@@ -296,7 +311,8 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 					if (pi.getPhones().size() > 1) {
 						showPhoneNumberSelectDialog(pi.getPhones());
 					} else {
-						mDigits.setText(pi.getPhones().get(0).getNumber().trim());
+						mDigits.setText(pi.getPhones().get(0).getNumber()
+								.trim());
 					}
 				}
 			}
@@ -371,13 +387,16 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 		final String[] res = new String[phones.size()];
 		int i = 0;
 		for (PhoneVO item : phones) {
-			res[i++] = item.getNumber() + " ("+Phone.getTypeLabel(getResources(), item.getType(), null)+")";
+			res[i++] = item.getNumber() + " ("
+					+ Phone.getTypeLabel(getResources(), item.getType(), null)
+					+ ")";
 		}
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		builder.setTitle("Choose number");
 		builder.setItems(res, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int item) {
-				mDigits.setText(res[item].substring(0, res[item].lastIndexOf(' ')).trim());
+				mDigits.setText(res[item].substring(0,
+						res[item].lastIndexOf(' ')).trim());
 			}
 		});
 		builder.create().show();
@@ -392,18 +411,53 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 
 	private void reloadContacts() {
 		allContacts.clear();
-		Uri uri = ContactsContract.Contacts.CONTENT_URI;
-		String[] projection = new String[] { ContactsContract.Contacts._ID,
-				ContactsContract.Contacts.DISPLAY_NAME,ContactsContract.Contacts.PHOTO_URI,ContactsContract.Contacts.PHOTO_THUMBNAIL_URI };
-		String selection = ContactsContract.Contacts.IN_VISIBLE_GROUP
-				+ " = 1 and " + ContactsContract.Contacts.HAS_PHONE_NUMBER
-				+ " = 1";
-		String[] selectionArgs = null;
+
+		String selection = String.format(
+				"%s > ?", Calls.DATE);
+		List<String> selectionArgs = Lists.newArrayList(Long.toString(System
+				.currentTimeMillis() - NEW_SECTION_TIME_WINDOW));
+		String[] projection = new String[] {  Calls._ID,
+				Calls.CACHED_NAME,
+				Calls.NUMBER,
+				Calls.CACHED_NUMBER_TYPE,
+				Calls.CACHED_PHOTO_ID};
+		
+		Cursor curLogs = getActivity().getContentResolver().query(
+				Calls.CONTENT_URI_WITH_VOICEMAIL, projection, selection,
+				selectionArgs.toArray(EMPTY_STRING_ARRAY),
+				Calls.DEFAULT_SORT_ORDER);
+
+		Log.d(TAG, "curLogs getColumnCount: "+curLogs.getColumnCount());
+		ArrayList<String> inHistory = new ArrayList<String>();
+		try {
+			while (curLogs.moveToNext()) {
+				if (curLogs.getString(1) != null
+						&& curLogs.getString(1).trim().length() > 0 && !inHistory.contains(curLogs.getString(1))) {
+					ContactVO cnt = new ContactVO(curLogs.getString(0),
+							curLogs.getString(1));
+					cnt.addPhone(curLogs.getString(2), curLogs.getInt(3));
+					cnt.setPhotoId(curLogs.getInt(4));
+					allContacts.add(cnt);
+					inHistory.add(cnt.getName());
+				}
+			}
+		} catch (Exception e) {
+			Log.e(TAG, "callLog ex: "+e.getLocalizedMessage());
+		} finally {
+			curLogs.close();
+		}
+
+		projection = new String[] { ContactsContract.Contacts._ID,
+				ContactsContract.Contacts.DISPLAY_NAME,
+				ContactsContract.Contacts.PHOTO_ID};
+		selection = ContactsContract.Contacts.IN_VISIBLE_GROUP + " = 1 and "
+				+ ContactsContract.Contacts.HAS_PHONE_NUMBER + " = 1";
 		String sortOrder = ContactsContract.Contacts.DISPLAY_NAME
 				+ " COLLATE LOCALIZED ASC";
 
-		Cursor cur = getActivity().getContentResolver().query(uri, projection,
-				selection, selectionArgs, sortOrder);
+		Cursor cur = getActivity().getContentResolver().query(
+				ContactsContract.Contacts.CONTENT_URI, projection, selection,
+				null, sortOrder);
 
 		try {
 			while (cur.moveToNext()) {
@@ -411,16 +465,12 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 						&& cur.getString(1).trim().length() > 0) {
 					ContactVO cnt = new ContactVO(cur.getString(0),
 							cur.getString(1));
-					String photoUri = cur.getString(2);
-					if (photoUri==null || photoUri.length()<1)
-						photoUri = cur.getString(3);
-//					if (photoUri!=null) {
-//						Log.d(TAG, "loader photoUri: "+photoUri);
-//					}
-					cnt.setPhotoUri(photoUri);
+					cnt.setPhotoId(cur.getInt(2));
 					allContacts.add(cnt);
 				}
 			}
+		} catch (Exception e) {
+			Log.e(TAG, "contacts ex: "+e.getLocalizedMessage());
 		} finally {
 			cur.close();
 		}
@@ -444,6 +494,8 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 				}
 
 			}
+		} catch (Exception e) {
+			Log.e(TAG, "phones ex: "+e.getLocalizedMessage());
 		} finally {
 			cur.close();
 		}
@@ -512,9 +564,10 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 		if (fContacts.isEmpty()) {
 			fContacts.add(new ContactVO(null,
 					getString(R.string.noMatchingContacts)));
-		} else {
-			Collections.sort(fContacts);
 		}
+//		} else {
+//			Collections.sort(fContacts);
+//		}
 		foundContactsAdapter.notifyDataSetChanged();
 	}
 

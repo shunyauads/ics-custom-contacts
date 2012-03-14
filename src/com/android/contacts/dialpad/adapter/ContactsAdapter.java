@@ -60,12 +60,7 @@ public class ContactsAdapter extends ArrayAdapter<ContactVO> {
 		}
 		ImageView contactPhoto = (ImageView) v.findViewById(R.id.contact_photo);
 		if (contactPhoto != null) {
-			String photoUriString = contact.getPhotoUri();
-			final Uri photoUri = photoUriString == null ? null : Uri.parse(photoUriString);
-//			if (photoUriString!=null) {
-//				Log.d(TAG, "adapter photoUri: "+photoUriString);
-//			}
-			mPhotoLoader.loadPhoto(contactPhoto, photoUri, false, true);
+			mPhotoLoader.loadPhoto(contactPhoto, contact.getPhotoId(), false, true);
 		}
 
 		return v;
