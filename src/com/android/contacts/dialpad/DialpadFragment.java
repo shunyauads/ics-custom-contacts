@@ -17,7 +17,6 @@
 package com.android.contacts.dialpad;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +81,6 @@ import com.android.contacts.R;
 import com.android.contacts.SpecialCharSequenceMgr;
 import com.android.contacts.activities.DialtactsActivity;
 import com.android.contacts.activities.DialtactsActivity.ViewPagerVisibilityListener;
-import com.android.contacts.calllog.CallLogQuery;
 import com.android.contacts.dialpad.adapter.ContactsAdapter;
 import com.android.contacts.dialpad.vo.ContactVO;
 import com.android.contacts.dialpad.vo.PhoneVO;
@@ -313,6 +311,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 					} else {
 						mDigits.setText(pi.getPhones().get(0).getNumber()
 								.trim());
+						dialButtonPressed();
 					}
 				}
 			}
@@ -397,6 +396,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 			public void onClick(DialogInterface dialog, int item) {
 				mDigits.setText(res[item].substring(0,
 						res[item].lastIndexOf(' ')).trim());
+				dialButtonPressed();
 			}
 		});
 		builder.create().show();
@@ -428,17 +428,17 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 				Calls.DEFAULT_SORT_ORDER);
 
 		Log.d(TAG, "curLogs getColumnCount: "+curLogs.getColumnCount());
-		ArrayList<String> inHistory = new ArrayList<String>();
 		try {
 			while (curLogs.moveToNext()) {
 				if (curLogs.getString(1) != null
-						&& curLogs.getString(1).trim().length() > 0 && !inHistory.contains(curLogs.getString(1))) {
+						&& curLogs.getString(1).trim().length() > 0) {
 					ContactVO cnt = new ContactVO(curLogs.getString(0),
 							curLogs.getString(1));
+					if (allContacts.contains(cnt))
+						continue;
 					cnt.addPhone(curLogs.getString(2), curLogs.getInt(3));
 					cnt.setPhotoId(curLogs.getInt(4));
 					allContacts.add(cnt);
-					inHistory.add(cnt.getName());
 				}
 			}
 		} catch (Exception e) {
@@ -533,8 +533,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 		ArrayList<ContactVO> toRemove = new ArrayList<ContactVO>();
 		// Log.d(TAG, "current pattern: " + pattern);
 
-		for (int i = 0; i < fContacts.size(); i++) {
-			ContactVO item = fContacts.get(i);
+		for (ContactVO item:fContacts) {
 			boolean remove = true;
 			Pattern regExp = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
 			String name = item.getName();
@@ -561,6 +560,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener,
 				toRemove.add(item);
 		}
 		fContacts.removeAll(toRemove);
+		
 		if (fContacts.isEmpty()) {
 			fContacts.add(new ContactVO(null,
 					getString(R.string.noMatchingContacts)));

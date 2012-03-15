@@ -2,6 +2,8 @@ package com.android.contacts.dialpad.vo;
 
 import java.util.ArrayList;
 
+import android.util.Log;
+
 public class ContactVO implements Comparable<ContactVO> {
 
 	private String _id;
@@ -122,5 +124,13 @@ public class ContactVO implements Comparable<ContactVO> {
 	public void setPhotoId(int photoId) {
 		this.photoId = photoId;
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		//Log.d(ContactVO.class.getName(), "equals '"+name+"' and '"+((ContactVO)o).getName()+"' is "+name.equals(((ContactVO)o).getName()));
+		return name.equals(((ContactVO)o).getName());
+	}
+	
+	
 
 }
