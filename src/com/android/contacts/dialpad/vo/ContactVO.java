@@ -2,11 +2,9 @@ package com.android.contacts.dialpad.vo;
 
 import java.util.ArrayList;
 
-import android.util.Log;
-
 public class ContactVO implements Comparable<ContactVO> {
 
-	private String _id;
+	private Long id;
 	private String name;
 	private ArrayList<PhoneVO> phones;
 	private int nameHighlightStart;
@@ -15,9 +13,11 @@ public class ContactVO implements Comparable<ContactVO> {
 	private int phoneHighlightEnd;
 	private String phoneVisible;
 	private int photoId;
+	private String lookupKey;
+	private int dividerTextResource = -1;
 
-	public ContactVO(String _id, String name) {
-		this._id = _id;
+	public ContactVO(Long id, String name, String lookupKey) {
+		this.id = id;
 		this.name = name;
 		this.phones = new ArrayList<PhoneVO>();
 		this.nameHighlightStart = -1;
@@ -25,14 +25,15 @@ public class ContactVO implements Comparable<ContactVO> {
 		this.phoneHighlightStart = -1;
 		this.phoneHighlightEnd = -1;
 		this.photoId = -1;
+		this.lookupKey = lookupKey;
 	}
 
-	public String get_id() {
-		return _id;
+	public Long getId() {
+		return id;
 	}
 
-	public void set_id(String _id) {
-		this._id = _id;
+	public void setId(Long id) {
+		this.id = id;
 	}
 
 	public String getName() {
@@ -89,7 +90,7 @@ public class ContactVO implements Comparable<ContactVO> {
 	}
 
 	public ContactVO clone() {
-		ContactVO temp = new ContactVO(_id, name);
+		ContactVO temp = new ContactVO(id, name, lookupKey);
 		temp.setPhones((ArrayList<PhoneVO>) phones.clone());
 		temp.setNameHighlightEnd(nameHighlightEnd);
 		temp.setNameHighlightStart(nameHighlightStart);
@@ -97,6 +98,7 @@ public class ContactVO implements Comparable<ContactVO> {
 		temp.setPhoneHighlightStart(phoneHighlightStart);
 		temp.setPhoneVisible(phoneVisible);
 		temp.setPhotoId(photoId);
+		temp.setDividerTextResource(dividerTextResource);
 		return temp;
 	}
 
@@ -127,10 +129,24 @@ public class ContactVO implements Comparable<ContactVO> {
 
 	@Override
 	public boolean equals(Object o) {
-		//Log.d(ContactVO.class.getName(), "equals '"+name+"' and '"+((ContactVO)o).getName()+"' is "+name.equals(((ContactVO)o).getName()));
-		return name.equals(((ContactVO)o).getName());
+		// Log.d(ContactVO.class.getName(),
+		// "equals '"+name+"' and '"+((ContactVO)o).getName()+"' is "+name.equals(((ContactVO)o).getName()));
+		return name.equals(((ContactVO) o).getName());
 	}
-	
-	
 
+	public String getLookupKey() {
+		return lookupKey;
+	}
+
+	public void setLookupKey(String lookupKey) {
+		this.lookupKey = lookupKey;
+	}
+
+	public int getDividerTextResource() {
+	  return dividerTextResource;
+  }
+
+	public void setDividerTextResource(int dividerTextResource) {
+		this.dividerTextResource=dividerTextResource;
+  }
 }
