@@ -22,11 +22,9 @@ public class ContactsAdapter extends ArrayAdapter<ContactVO> {
 	private ArrayList<ContactVO> items;
 	private static int MY_BACKGROUD_COLOR;
 	private static ContactPhotoManager mPhotoLoader;
-	private Context mContext;
 
 	public ContactsAdapter(Context context, int textViewResourceId, ArrayList<ContactVO> items) {
 		super(context, textViewResourceId, items);
-		this.mContext = context;
 		this.items = items;
 		MY_BACKGROUD_COLOR = this.getContext().getResources().getColor(R.color.call_log_voicemail_highlight_color);
 		mPhotoLoader = ContactPhotoManager.getInstance(context);

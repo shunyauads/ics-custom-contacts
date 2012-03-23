@@ -293,7 +293,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 		mFoundContacts.setOnItemClickListener(new OnItemClickListener() {
 			public void onItemClick(AdapterView<?> arg0, View view, int position, long id) {
 				final ContactVO pi = fContacts.get(position);
-				if (pi != null) {
+				if (pi != null && pi.getDividerTextResource()<0) {
 					if (pi.getPhones().size() > 1) {
 						showPhoneNumberSelectDialog(pi.getPhones());
 					} else {
@@ -307,7 +307,7 @@ public class DialpadFragment extends Fragment implements View.OnClickListener, V
 		mFoundContacts.setOnItemLongClickListener(new OnItemLongClickListener() {
 			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 				final ContactVO pi = fContacts.get(position);
-				if (pi != null) {
+				if (pi != null && pi.getDividerTextResource()<0) {
 					showContactActionDialog(pi);
 				}
 				return false;
