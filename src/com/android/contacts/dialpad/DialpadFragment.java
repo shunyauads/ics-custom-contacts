@@ -88,6 +88,7 @@ import com.android.contacts.dialpad.adapter.ContactsAdapter;
 import com.android.contacts.dialpad.vo.ContactVO;
 import com.android.contacts.dialpad.vo.PhoneVO;
 import com.android.contacts.interactions.ContactDeletionInteraction;
+import com.android.contacts.util.PhoneNumberFormatter;
 import com.android.internal.telephony.ITelephony;
 import com.android.phone.CallLogAsync;
 import com.android.phone.HapticFeedback;
@@ -286,7 +287,7 @@ public class DialpadFragment extends Fragment
         mDigits.setOnLongClickListener(this);
         mDigits.addTextChangedListener(this);
 
-        //PhoneNumberFormatter.setPhoneNumberFormattingTextWatcher(getActivity(), mDigits);
+        PhoneNumberFormatter.setPhoneNumberFormattingTextWatcher(getActivity(), mDigits);
         
 		clearDigits = (ImageButton) fragmentView.findViewById(R.id.clear_digits);
 		clearDigits.setOnClickListener(this);
